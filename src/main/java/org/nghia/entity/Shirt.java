@@ -11,6 +11,14 @@ public class Shirt implements Serializable {
   private Type type;
   private List<String> materials;
 
+  public Shirt(String name, String clb, Size size, Type type, List<String> materials) {
+    this.name = name;
+    this.clb = clb;
+    this.size = size;
+    this.type = type;
+    this.materials = materials;
+  }
+
   public Integer getId() {
     return id;
   }
