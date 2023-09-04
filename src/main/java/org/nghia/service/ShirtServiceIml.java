@@ -26,8 +26,7 @@ public class ShirtServiceIml implements ShirtService {
   private final String DATA_FILE = "data.txt";
   private final Scanner scanner;
   private final Gson gson = new GsonBuilder().setPrettyPrinting().create();
-  ;
-  private final Map<String, Function> functions = new HashMap<>();
+  private static Map<String, Function> functions = new HashMap<>();
 
   public ShirtServiceIml(Scanner scanner) {
     this.scanner = scanner;
@@ -43,32 +42,30 @@ public class ShirtServiceIml implements ShirtService {
       objectInputStream.close();
     } catch (FileNotFoundException e) {
       System.out.println("Không thể tìm thấy file với tên: " + DATA_FILE);
-    } catch (IOException e) {
+    } catch (IOException ignored) {
     } catch (ClassNotFoundException e) {
       System.out.println("Không tìm thấy class: " + e);
     }
   }
 
   private void displayFunctions(Map<String, Function> map) {
-    map.forEach((s, function) -> {
-      System.out.println(s + ". " + function.getDescription());
-    });
+    map.forEach((s, function) ->
+        System.out.println(s + ". " + function.getDescription()));
   }
 
-  private void clearTerminal() {
-    // Clear terminal
-    String os = System.getProperty("os.name").toLowerCase();
-    Process process;
-    try {
-      if (os.contains("windows")) {
-        new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
-      }
-      // For Unix-like systems (including macOS, Linux, and Zsh)
-      Runtime.getRuntime().exec("clear");
-    } catch (IOException | InterruptedException e) {
-      System.err.println(e.getMessage());
-    }
-  }
+//  private void clearTerminal() {
+//    // Clear terminal
+//    String os = System.getProperty("os.name").toLowerCase();
+//    try {
+//      if (os.contains("windows")) {
+//        new ProcessBuilder("cmd", "/c", "cls").inheritIO().start().waitFor();
+//      }
+//      // For Unix-like systems (including macOS, Linux, and Zsh)
+//      Runtime.getRuntime().exec("clear");
+//    } catch (IOException | InterruptedException e) {
+//      System.err.println(e.getMessage());
+//    }
+//  }
 
   private Shirt createProduct() {
     String name, clb, materials_raw;
@@ -106,12 +103,16 @@ public class ShirtServiceIml implements ShirtService {
   }
 
   private void clearFunctions(String[] listKeys) {
-    // Clear functions, thêm các chức năng và key của nó
-    functions.forEach((s, function) -> {
-      if (!Arrays.asList(listKeys).contains(s)) {
-        functions.remove(s);
+    // Clear functions
+    var iterator = functions.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Map.Entry<String, Function> entry = iterator.next();
+      String key = entry.getKey();
+      if (!Arrays.asList(listKeys).contains(key)) {
+        // Remove the entry from the map using the iterator's remove() method
+        iterator.remove();
       }
-    });
+    }
   }
 
   private void performFunction(Map<String, Function> listFunctions) {
@@ -165,6 +166,7 @@ public class ShirtServiceIml implements ShirtService {
       Shirt newShirt = createProduct();
       newShirt.setId(id);
       storage.replace(id, newShirt);
+      System.out.println("Chỉnh sửa thành công");
       menu();
     }
 
@@ -175,12 +177,13 @@ public class ShirtServiceIml implements ShirtService {
         "Hiển thị toàn bộ sản phẩm"));
     functions.put("2", new Function(this::modify, "Tiếp tục"));
     functions.put("3", new Function(this::menu, "Trở về menu"));
+    displayFunctions(functions);
     performFunction(functions);
   }
 
   @Override
   public void menu() {
-    clearTerminal();
+//    clearTerminal();
     System.out.println("===============MENU===============");
 
     // Tạo danh sách các key của chức năng để xóa các key không tồn tại
@@ -220,7 +223,7 @@ public class ShirtServiceIml implements ShirtService {
 
   @Override
   public void add() {
-    clearTerminal();
+//    clearTerminal();
     System.out.println("==========Thêm sản phẩm==========");
     Shirt newShirt = createProduct();
     Integer newId = storage.size() + 1;
@@ -233,7 +236,33 @@ public class ShirtServiceIml implements ShirtService {
 
   @Override
   public void delete() {
+    System.out.println("==========Xóa sản phẩm==========");
+    int id;
+    do {
+      try {
+        System.out.print("Nhập id của sản phẩm cần xóa: ");
+        id = Integer.parseInt(scanner.nextLine());
+        break;
+      } catch (NumberFormatException e) {
+        System.out.println("Vui lòng nhập id là số và nhập đúng id của sản phẩm");
+      }
+    } while (true);
+    Shirt shirtDelete = storage.get(id);
+    if (shirtDelete != null) {
+      System.out.println(gson.toJson(shirtDelete));
+      storage.remove(shirtDelete.getId());
+      menu();
+    }
 
+    System.out.println("Không tìm thấy sản phẩm");
+    String[] listKeys = {"1", "2", "3"};
+    clearFunctions(listKeys);
+    functions.put("1", new Function(() -> show(new ArrayList<>(storage.values())),
+        "Hiển thị toàn bộ sản phẩm"));
+    functions.put("2", new Function(this::delete, "Tiếp tục"));
+    functions.put("3", new Function(this::menu, "Trở về menu"));
+    displayFunctions(functions);
+    performFunction(functions);
   }
 
   @Override
